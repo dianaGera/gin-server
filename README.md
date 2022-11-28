@@ -30,9 +30,9 @@ curl http://localhost:8080/mybored-list/
 curl http://localhost:8080/random-bored-thing/
 
 # Add to MyBoredList last bored suggestion
-curl http://localhost:8080/add-bored/
+curl -i -X POST http://localhost:8080/add-bored/
 
 # Remove item from MyBoredList by id
-curl http://localhost:8080/remove-bored/
+curl -i -X POST http://localhost:8080/remove-bored/
 
 ```

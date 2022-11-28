@@ -12,7 +12,6 @@ import (
 
 // models
 type BoredList struct {
-	ID            int     `json: "id"`
 	Activity      string  `json: "activity"`
 	Type          string  `json: "type"`
 	Participants  int     `json: "participants"`
@@ -24,18 +23,14 @@ type BoredList struct {
 
 // database
 var boredList = []BoredList{}
-var chachedBoredList BoredList
+var chachedBoredList = []BoredList{}
 
 // views
 func getMyBoredList(c *gin.Context) {
-	fmt.Printf("Results: %v\n", chachedBoredList)
-	lastTask := "You didn't serched for any tasks yet"
-	res := []string{
-		"Your Bored list":  boredList,
-		"Last viewd tasks": lastTask,
-	}
-	// if
-	c.IndentedJSON(http.StatusOK, res)
+	c.IndentedJSON(http.StatusOK, gin.H{
+		"Your List":   boredList,
+		"Last search": chachedBoredList,
+	})
 }
 
 func getRandomData(c *gin.Context) {
@@ -54,8 +49,13 @@ func getRandomData(c *gin.Context) {
 		if err != nil {
 			panic(err.Error())
 		}
-
-		json.Unmarshal(body, &chachedBoredList)
+		var data BoredList
+		json.Unmarshal(body, &data)
+		if len(chachedBoredList) > 0 {
+			chachedBoredList[0] = data
+		} else {
+			chachedBoredList = append(chachedBoredList, data)
+		}
 
 		fmt.Printf("Results: %v\n", chachedBoredList)
 
@@ -66,15 +66,17 @@ func getRandomData(c *gin.Context) {
 
 }
 
+// func getBoredItem(c *gin.Context) {
+	
+// }
+
 func addMyBoredList(c *gin.Context) {
-	var newUser BoredList
-
-	if err := c.BindJSON(&newUser); err != nil {
-		return
+	if len(chachedBoredList) > 0 {
+		boredList = append(boredList, chachedBoredList[0])
+		c.IndentedJSON(http.StatusCreated, chachedBoredList[0])
+	} else {
+		c.IndentedJSON(http.StatusOK, gin.H{"message": "Nothing to add"})
 	}
-	boredList = append(boredList, newUser)
-
-	c.IndentedJSON(http.StatusCreated, newUser)
 }
 
 // server conf
@@ -85,6 +87,7 @@ func main() {
 	// routers
 	router.GET("/mybored-list", getMyBoredList)
 	router.GET("/random-bored-thing", getRandomData)
+	// router.GET("/get-bored", getBoredItem)
 
 	router.POST("/add-bored", addMyBoredList)
 	router.POST("/remove-bored", addMyBoredList)
