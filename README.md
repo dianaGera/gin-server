@@ -1,4 +1,4 @@
-## Keep yourself busy with BoredAPI on my </gin-server>
+## Keep yourself busy with BoredAPI on my <//gin-server>
 
 #### Prerequisites:
 * Golang
