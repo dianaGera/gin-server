@@ -1,7 +1,8 @@
 package main
 
 import (
-	// "fmt"
+	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -10,18 +11,31 @@ import (
 )
 
 // models
-type User struct {
-	ID   		int    `json: "id"`
-	Activity 	string `json: "name"`
-	Age	  		int    `json: "age"`
+type BoredList struct {
+	ID            int     `json: "id"`
+	Activity      string  `json: "activity"`
+	Type          string  `json: "type"`
+	Participants  int     `json: "participants"`
+	Price         float64 `json: "price"`
+	Link          string  `json: "link"`
+	Key           string  `json: "key"`
+	Accessibility float32 `json: "accessibility"`
 }
 
 // database
-var boredList = []User{}
+var boredList = []BoredList{}
+var chachedBoredList BoredList
 
 // views
-func getUsers(c *gin.Context) {
-	c.IndentedJSON(http.StatusOK, boredList)
+func getMyBoredList(c *gin.Context) {
+	fmt.Printf("Results: %v\n", chachedBoredList)
+	lastTask := "You didn't serched for any tasks yet"
+	res := []string{
+		"Your Bored list":  boredList,
+		"Last viewd tasks": lastTask,
+	}
+	// if
+	c.IndentedJSON(http.StatusOK, res)
 }
 
 func getRandomData(c *gin.Context) {
@@ -29,19 +43,31 @@ func getRandomData(c *gin.Context) {
 	req, _ := http.NewRequest("GET", url, nil)
 	res, _ := http.DefaultClient.Do(req)
 
-	if res.Status != "200 OK" {
+	// res, err := http.Get(url)
+	// if err != nil {
+	// 	panic(err.Error())
+	// }
+
+	if res.Status == "200 OK" {
+		body, err := ioutil.ReadAll(res.Body)
 		defer res.Body.Close()
-		body, _ := ioutil.ReadAll(res.Body)
-		println(string(body))
+		if err != nil {
+			panic(err.Error())
+		}
+
+		json.Unmarshal(body, &chachedBoredList)
+
+		fmt.Printf("Results: %v\n", chachedBoredList)
+
 		c.Data(http.StatusOK, "application/json", body)
 	} else {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Bad Request"})
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": res.Status})
 	}
-	
+
 }
 
-func addUser(c *gin.Context) {
-	var newUser User
+func addMyBoredList(c *gin.Context) {
+	var newUser BoredList
 
 	if err := c.BindJSON(&newUser); err != nil {
 		return
@@ -57,9 +83,11 @@ func main() {
 	router := gin.Default()
 
 	// routers
-	router.GET("/users", getUsers)
-	router.GET("/random-data", getRandomData)
-	router.POST("/add-user", addUser)
+	router.GET("/mybored-list", getMyBoredList)
+	router.GET("/random-bored-thing", getRandomData)
+
+	router.POST("/add-bored", addMyBoredList)
+	router.POST("/remove-bored", addMyBoredList)
 
 	router.Run("localhost:8080")
 }
